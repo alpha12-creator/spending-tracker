@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spending Tracker</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#262B20">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    --paper: #EDE6D6;
+    --paper-2: #E4DBC6;
+    --ink: #262B20;
+    --ink-soft: #5C5A4C;
+    --line: #C4B79A;
+    --line-soft: #DAD0B7;
+    --good: #3F6B52;
+    --good-bg: #E0E9DE;
+    --bad: #A6423F;
+    --bad-bg: #F0DEDA;
+    --accent: #8A6A2F;
+  }
+
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #1C1B16;
+      --paper-2: #242219;
+      --ink: #EDE6D6;
+      --ink-soft: #B8AF97;
+      --line: #4A4636;
+      --line-soft: #35321F;
+      --good: #7FBE99;
+      --good-bg: #24332A;
+      --bad: #E08B87;
+      --bad-bg: #3A2724;
+      --accent: #D2AC5C;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #1C1B16;
+    --paper-2: #242219;
+    --ink: #EDE6D6;
+    --ink-soft: #B8AF97;
+    --line: #4A4636;
+    --line-soft: #35321F;
+    --good: #7FBE99;
+    --good-bg: #24332A;
+    --bad: #E08B87;
+    --bad-bg: #3A2724;
+    --accent: #D2AC5C;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+
+  body {
+    height: 100%;
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-optical-sizing: auto;
+    font-weight: 600;
+    font-size: 30px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .subtitle {
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  section {
+    margin-bottom: 28px;
+  }
+
+  .section-title {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+
+  .settings {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 1 140px;
+  }
+
+  label {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  input, textarea {
+    font-family: inherit;
+    font-size: 15px;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 8px 10px;
+    border-radius: 3px;
+    width: 100%;
+  }
+
+  input:focus, textarea:focus, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .entry-form {
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .entry-form .full { grid-column: 1 / -1; }
+
+  .add-btn {
+    grid-column: 1 / -1;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+  }
+  .add-btn:hover { opacity: 0.85; }
+
+  .day-row {
+    display: grid;
+    grid-template-columns: 74px 1fr 1fr 90px 28px;
+    align-items: start;
+    gap: 10px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 13px;
+  }
+  .day-row:last-child { border-bottom: none; }
+
+  .day-date { color: var(--ink-soft); padding-top: 2px; }
+
+  .day-nums { display: flex; flex-direction: column; gap: 2px; }
+  .day-nums .r { color: var(--ink-soft); }
+  .day-nums .s { color: var(--ink); }
+
+  .badge {
+    text-align: right;
+    font-weight: 600;
+    padding-top: 2px;
+  }
+  .badge.good { color: var(--good); }
+  .badge.bad { color: var(--bad); }
+
+  .note {
+    font-size: 12px;
+    color: var(--bad);
+    background: var(--bad-bg);
+    border-radius: 3px;
+    padding: 4px 7px;
+    margin-top: 2px;
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px;
+  }
+  .del-btn:hover { color: var(--bad); }
+
+  .empty {
+    color: var(--ink-soft);
+    font-size: 13px;
+    padding: 18px 0;
+    text-align: center;
+    border: 1px dashed var(--line);
+    border-radius: 4px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat {
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 14px;
+  }
+
+  .stat .label { font-size: 11px; color: var(--ink-soft); margin-bottom: 4px; }
+  .stat .value { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; }
+  .stat .value.good { color: var(--good); }
+  .stat .value.bad { color: var(--bad); }
+
+  @media (max-width: 420px) {
+    .entry-form { grid-template-columns: 1fr; }
+    .day-row { grid-template-columns: 60px 1fr 26px; }
+    .day-row .badge { grid-column: 2 / 3; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Spending Tracker</h1>
+    <p class="subtitle">Track your loan disbursement day by day — fill it in each time you spend.</p>
+  </header>
+
+  <section>
+    <div class="section-title">Settings</div>
+    <div class="settings">
+      <div class="field">
+        <label for="daily-amount">Amount received per day (Tsh)</label>
+        <input type="number" id="daily-amount" value="7500" min="0" step="100">
+      </div>
+      <div class="field">
+        <label for="daily-limit">Daily spending limit (Tsh)</label>
+        <input type="number" id="daily-limit" value="5000" min="0" step="100">
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">Add a day</div>
+    <div class="entry-form">
+      <div class="field">
+        <label for="entry-date">Date</label>
+        <input type="date" id="entry-date">
+      </div>
+      <div class="field">
+        <label for="entry-spent">Amount spent (Tsh)</label>
+        <input type="number" id="entry-spent" min="0" step="100" placeholder="0">
+      </div>
+      <div class="field full">
+        <label for="entry-note">Note (if you went over the limit, explain here)</label>
+        <textarea id="entry-note" rows="2" placeholder="e.g. extra fare into town"></textarea>
+      </div>
+      <button class="add-btn" id="add-btn">Save this day</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">Weekly summary</div>
+    <div class="summary-grid" id="summary-grid"></div>
+  </section>
+
+  <section>
+    <div class="section-title">Daily log</div>
+    <div id="days-list"></div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  const STORE_KEY = 'dirisha-matumizi-entries';
+  const SETTINGS_KEY = 'dirisha-matumizi-settings';
+
+  const dailyAmountEl = document.getElementById('daily-amount');
+  const dailyLimitEl = document.getElementById('daily-limit');
+  const dateEl = document.getElementById('entry-date');
+  const spentEl = document.getElementById('entry-spent');
+  const noteEl = document.getElementById('entry-note');
+  const addBtn = document.getElementById('add-btn');
+  const daysList = document.getElementById('days-list');
+  const summaryGrid = document.getElementById('summary-grid');
+
+  function fmt(n) {
+    return 'Tsh ' + Math.round(n).toLocaleString('en-US');
+  }
+
+  function todayISO() {
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+  }
+
+  function loadEntries() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveEntries(entries) {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify(entries));
+    } catch (e) {
+      console.error('Failed to save', e);
+    }
+  }
+
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem(SETTINGS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+        amount: Number(dailyAmountEl.value) || 0,
+        limit: Number(dailyLimitEl.value) || 0
+      }));
+    } catch (e) {
+      console.error('Failed to save settings', e);
+    }
+  }
+
+  const settings = loadSettings();
+  if (settings) {
+    dailyAmountEl.value = settings.amount;
+    dailyLimitEl.value = settings.limit;
+  }
+  dateEl.value = todayISO();
+
+  dailyAmountEl.addEventListener('change', saveSettings);
+  dailyLimitEl.addEventListener('change', saveSettings);
+
+  function render() {
+    const entries = loadEntries().sort((a, b) => b.date.localeCompare(a.date));
+    const limit = Number(dailyLimitEl.value) || 0;
+
+    if (entries.length === 0) {
+      daysList.innerHTML = '<div class="empty">No days added yet.</div>';
+    } else {
+      daysList.innerHTML = entries.map(function (e) {
+        const salio = e.received - e.spent;
+        const overLimit = e.spent > limit;
+        const badgeClass = salio >= 0 ? 'good' : 'bad';
+        const badgeText = salio >= 0 ? '+' + fmt(salio) : '−' + fmt(Math.abs(salio));
+        const noteHtml = overLimit
+          ? '<div class="note">' + (e.note ? escapeHtml(e.note) : 'Over the limit — no note written') + '</div>'
+          : '';
+        return (
+          '<div class="day-row">' +
+            '<div class="day-date">' + formatDate(e.date) + '</div>' +
+            '<div class="day-nums">' +
+              '<span class="r">Received: ' + fmt(e.received) + '</span>' +
+              '<span class="s">Spent: ' + fmt(e.spent) + '</span>' +
+            '</div>' +
+            '<div>' + noteHtml + '</div>' +
+            '<div class="badge ' + badgeClass + '">' + badgeText + '</div>' +
+            '<button class="del-btn" data-id="' + e.id + '" aria-label="Delete this day">×</button>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    const totalReceived = entries.reduce((s, e) => s + e.received, 0);
+    const totalSpent = entries.reduce((s, e) => s + e.spent, 0);
+    const totalSalio = totalReceived - totalSpent;
+    const daysOver = entries.filter(e => e.spent > limit).length;
+
+    summaryGrid.innerHTML =
+      '<div class="stat"><div class="label">Total received</div><div class="value">' + fmt(totalReceived) + '</div></div>' +
+      '<div class="stat"><div class="label">Total spent</div><div class="value">' + fmt(totalSpent) + '</div></div>' +
+      '<div class="stat"><div class="label">Savings / Shortfall</div><div class="value ' + (totalSalio >= 0 ? 'good' : 'bad') + '">' + (totalSalio >= 0 ? fmt(totalSalio) : '−' + fmt(Math.abs(totalSalio))) + '</div></div>' +
+      '<div class="stat"><div class="label">Days over the limit</div><div class="value ' + (daysOver > 0 ? 'bad' : 'good') + '">' + daysOver + '</div></div>';
+
+    document.querySelectorAll('.del-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const id = btn.getAttribute('data-id');
+        const remaining = loadEntries().filter(e => e.id !== id);
+        saveEntries(remaining);
+        render();
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function formatDate(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    const week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return week[d.getDay()] + '<br>' + d.getDate() + '/' + (d.getMonth() + 1);
+  }
+
+  addBtn.addEventListener('click', function () {
+    const date = dateEl.value || todayISO();
+    const received = Number(dailyAmountEl.value) || 0;
+    const spent = Number(spentEl.value) || 0;
+    const note = noteEl.value.trim();
+
+    if (!spentEl.value) {
+      spentEl.focus();
+      return;
+    }
+
+    const entries = loadEntries();
+    const existingIdx = entries.findIndex(e => e.date === date);
+    const entry = {
+      id: existingIdx >= 0 ? entries[existingIdx].id : String(Date.now()),
+      date: date,
+      received: received,
+      spent: spent,
+      note: note
+    };
+
+    if (existingIdx >= 0) {
+      entries[existingIdx] = entry;
+    } else {
+      entries.push(entry);
+    }
+
+    saveEntries(entries);
+    spentEl.value = '';
+    noteEl.value = '';
+    dateEl.value = todayISO();
+    render();
+  });
+
+  render();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function (e) {
+        console.error('Service worker registration failed', e);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
